@@ -1,19 +1,58 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os/exec"
+	"time"
+
+	"net/http"
+	"net/url"
 
 	"github.com/rs/xid"
-	"github.com/skratchdot/open-golang/open"
 )
 
-func main() {
-	_, err := LoadConfig()
-
-	if err != nil {
-		bootstrap()
-		return
+func signin() error {
+	signinID := xid.New().String()
+	authUrl := "https://slack.com/oauth/authorize?scope=identity.basic&client_id=158986125361.158956389232&state=" + url.QueryEscape(signinID) + "&redirect_uri=" + url.QueryEscape("https://slackme.pagekite.me/authenticate")
+	if err := exec.Command("open", authUrl).Run(); err != nil {
+		return err
 	}
+
+	authCompleteURL := fmt.Sprintf("https://slackme.pagekite.me/auth/%v", url.QueryEscape(signinID))
+
+	for {
+		response, err := http.Get(authCompleteURL)
+		if err != nil {
+			return err
+		}
+
+		if response.StatusCode == http.StatusOK {
+			body := make(map[string]interface{})
+			decoder := json.NewDecoder(response.Body)
+			if err := decoder.Decode(&body); err != nil {
+				return err
+			}
+			fmt.Printf("%v", body)
+			return nil
+		} else {
+			println("nope...")
+			time.Sleep(time.Second)
+			continue
+		}
+	}
+
+	return nil
+}
+
+func main() {
+	signin()
+	// _, err := LoadConfig()
+	//
+	// if err != nil {
+	// 	bootstrap()
+	// 	return
+	// }
 
 	// args := os.Args
 	// if len(os.Args) <= 1 {
@@ -44,9 +83,10 @@ func main() {
 }
 
 func bootstrap() error {
-	bootstrapId := xid.New()
-	url := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v", bootstrapId)
-	if err := open.Run(url); err != nil {
+	bootstrapId := xid.New().String()
+	authorizeUrl := fmt.Sprintf("https://slack.com/oauth/authorize?redirect_uri=%v&scope=incoming-webhook&client_id=158986125361.158956389232&state=%v", url.QueryEscape("https://slackme.pagekite.me/register"), url.QueryEscape(bootstrapId))
+
+	if err := exec.Command("open", authorizeUrl).Start(); err != nil {
 		return err
 	}
 
