@@ -14,7 +14,7 @@ import (
 
 func signin() error {
 	signinID := xid.New().String()
-	authUrl := "https://slack.com/oauth/authorize?scope=identity.basic&client_id=158986125361.158956389232&state=" + url.QueryEscape(signinID) + "&redirect_uri=" + url.QueryEscape("https://slackme.pagekite.me/authenticate")
+	authUrl := "https://slack.com/oauth/authorize?scope=identity.basic,identity.email,identity.team,identity.avatar&client_id=158986125361.158956389232&state=" + url.QueryEscape(signinID) + "&redirect_uri=" + url.QueryEscape("https://slackme.pagekite.me/authenticate")
 	if err := exec.Command("open", authUrl).Run(); err != nil {
 		return err
 	}
