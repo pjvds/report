@@ -13,8 +13,6 @@ func main() {
 	if err != nil {
 		bootstrap()
 		return
-
-		//log.Fatalf("failed to load config: %v\n", err)
 	}
 
 	// args := os.Args
