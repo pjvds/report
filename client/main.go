@@ -19,7 +19,7 @@ func signin() error {
 		return err
 	}
 
-	authCompleteURL := fmt.Sprintf("https://slackme.pagekite.me/auth/%v", url.QueryEscape(signinID))
+	authCompleteURL := fmt.Sprintf("https://slackme.pagekite.me/authenticate/%v", url.QueryEscape(signinID))
 
 	for {
 		response, err := http.Get(authCompleteURL)
