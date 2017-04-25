@@ -1,15 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
-	"time"
 
 	"net/http"
 	"net/url"
 
 	"github.com/rs/xid"
+	spin "github.com/tj/go-spin"
 )
 
 func signin() error {
@@ -21,24 +22,19 @@ func signin() error {
 
 	authCompleteURL := fmt.Sprintf("https://slackme.pagekite.me/authenticate/%v", url.QueryEscape(signinID))
 
+	s := spin.New()
 	for {
+		fmt.Printf("\r  \033[36waiting for completion \033[m %s", s.Next())
 		response, err := http.Get(authCompleteURL)
 		if err != nil {
 			return err
 		}
 
 		if response.StatusCode == http.StatusOK {
-			body := make(map[string]interface{})
-			decoder := json.NewDecoder(response.Body)
-			if err := decoder.Decode(&body); err != nil {
-				return err
-			}
-			fmt.Printf("%v", body)
+			println()
+
+			io.Copy(os.Stdout, response.Body)
 			return nil
-		} else {
-			println("nope...")
-			time.Sleep(time.Second)
-			continue
 		}
 	}
 
