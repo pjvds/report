@@ -44,8 +44,8 @@ func (this *Context) ChannelByName(name string) (Channel, bool) {
 func (this *Context) AddChannel() (Channel, bool, error) {
 	addChannelID := xid.New().String()
 	addUrl := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v&redirect_uri=%v",
-		url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.pagekite.me/register"))
-	completeURL := fmt.Sprintf("https://slackme.pagekite.me/completion/channel/%v", url.QueryEscape(addChannelID))
+		url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.org/a/register"))
+	completeURL := fmt.Sprintf("https://slackme.org/a/completion/channel/%v", url.QueryEscape(addChannelID))
 
 	if err := exec.Command("open", addUrl).Run(); err != nil {
 		return Channel{}, false, err
@@ -83,8 +83,8 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 
 func (this *Context) Login() error {
 	signinID := xid.New().String()
-	authUrl := "https://slack.com/oauth/authorize?scope=identity.basic,identity.email,identity.team,identity.avatar&client_id=158986125361.158956389232&state=" + url.QueryEscape(signinID) + "&redirect_uri=" + url.QueryEscape("https://slackme.pagekite.me/authenticate")
-	authCompleteURL := fmt.Sprintf("https://slackme.pagekite.me/completion/authentication/%v", url.QueryEscape(signinID))
+	authUrl := "https://slack.com/oauth/authorize?scope=identity.basic,identity.email,identity.team,identity.avatar&client_id=158986125361.158956389232&state=" + url.QueryEscape(signinID) + "&redirect_uri=" + url.QueryEscape("https://slackme.org/a/authenticate")
+	authCompleteURL := fmt.Sprintf("https://slackme.org/a/completion/authentication/%v", url.QueryEscape(signinID))
 
 	if err := exec.Command("open", authUrl).Run(); err != nil {
 		return err
@@ -172,6 +172,13 @@ func askForConfirmation(s string) bool {
 func main() {
 	app := cli.NewApp()
 	app.Name = "slackme"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:   "host",
+			EnvVar: "SLACKME_HOST",
+			Value:  "https://slackme.org",
+		},
+	}
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "channel",
