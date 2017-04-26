@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
 	"net/http"
 	"net/url"
@@ -13,6 +16,7 @@ import (
 	"github.com/Jeffail/gabs"
 	"github.com/rs/xid"
 	spin "github.com/tj/go-spin"
+	"github.com/urfave/cli"
 )
 
 type Context struct {
@@ -28,14 +32,23 @@ func (this *Context) HasChannels() bool {
 	return len(this.Channels) > 0
 }
 
-func (this *Context) AddChannel() (bool, error) {
+func (this *Context) ChannelByName(name string) (Channel, bool) {
+	for _, channel := range this.Channels {
+		if strings.EqualFold(name, channel.Name) {
+			return channel, true
+		}
+	}
+	return Channel{}, false
+}
+
+func (this *Context) AddChannel() (Channel, bool, error) {
 	addChannelID := xid.New().String()
 	addUrl := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v&redirect_uri=%v",
 		url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.pagekite.me/register"))
 	completeURL := fmt.Sprintf("https://slackme.pagekite.me/completion/channel/%v", url.QueryEscape(addChannelID))
 
 	if err := exec.Command("open", addUrl).Run(); err != nil {
-		return false, err
+		return Channel{}, false, err
 	}
 
 	s := spin.New()
@@ -43,26 +56,27 @@ func (this *Context) AddChannel() (bool, error) {
 		fmt.Printf("\rwaiting for completion %s", s.Next())
 		response, err := http.Get(completeURL)
 		if err != nil {
-			return false, err
+			return Channel{}, false, err
 		}
 
 		if response.StatusCode == http.StatusOK {
 			fmt.Printf("\r")
 			body, err := gabs.ParseJSONBuffer(response.Body)
 			if err != nil {
-				return false, err
+				return Channel{}, false, err
 			}
 
-			this.Channels = append(this.Channels, Channel{
+			channel := Channel{
 				Name:       body.Path("name").Data().(string),
 				WebhookUrl: body.Path("webhookURL").Data().(string),
-			})
+			}
+			this.Channels = append(this.Channels, channel)
 
 			if err := this.Save(); err != nil {
-				return false, err
+				return Channel{}, false, err
 			}
 
-			return true, nil
+			return channel, true, nil
 		}
 	}
 }
@@ -95,12 +109,12 @@ func (this *Context) Login() error {
 			this.Token = body.Path("token").Data().(string)
 			this.UserName = body.Path("name").Data().(string)
 			this.TeamName = body.Path("team").Data().(string)
+			this.Channels = make([]Channel, 0)
 
 			if err := this.Save(); err != nil {
 				return err
 			}
 
-			fmt.Printf("welcome %v, you rock! ❤️\n", this.UserName)
 			return nil
 		}
 	}
@@ -134,21 +148,122 @@ func (this *Context) Save() error {
 	return json.NewEncoder(file).Encode(this)
 }
 
-func main() {
-	context, err := LoadContext()
-	if err != nil {
-		log.Fatalf("failed to load context: %v", err)
-	}
+func askForConfirmation(s string) bool {
+	reader := bufio.NewReader(os.Stdin)
 
-	if context.NeedsLogin() {
-		if err := context.Login(); err != nil {
-			log.Fatalf("failed to login: %v", err)
+	for {
+		fmt.Printf("%s [y/n]: ", s)
+
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		if response == "y" || response == "yes" {
+			return true
+		} else if response == "n" || response == "no" {
+			return false
 		}
 	}
+}
 
-	if !context.HasChannels() {
-		context.AddChannel()
+func main() {
+	app := cli.NewApp()
+	app.Name = "slackme"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:   "channel",
+			EnvVar: "SLACKME_CHANNEL",
+		},
 	}
+	app.Commands = []cli.Command{
+		cli.Command{
+			Name: "login",
+			Action: func(cli *cli.Context) error {
+				context, err := LoadContext()
+				if err != nil {
+					log.Fatalf("failed to load context: %v", err)
+				}
+
+				if !context.NeedsLogin() {
+					if !askForConfirmation(fmt.Sprintf("$v already logged in, are you sure you want to login and loose the context of that user?", context.Email)) {
+						return nil
+					}
+				}
+
+				if err := context.Login(); err != nil {
+					log.Fatalf("failed to login: %v", err)
+				}
+
+				fmt.Printf("Welcome %v, you rock! ❤️\nYou probably want to add slackme to a channel:\n\tslackme add-channel\n")
+				return nil
+			},
+		},
+		cli.Command{
+			Name:    "add-channel",
+			Aliases: []string{"ac"},
+			Action: func(cli *cli.Context) error {
+				context, err := LoadContext()
+				if err != nil {
+					log.Fatalf("failed to load context: %v", err)
+				}
+
+				if context.NeedsLogin() {
+					log.Fatalf("need login, please run:\n\tslackme login")
+				}
+
+				channel, ok, err := context.AddChannel()
+				if err != nil {
+					log.Fatalf("failed to add channel: %v", err)
+				}
+				if ok {
+					fmt.Printf("channel added succesfully, run to post:\n\tslacke -c '%v' post", channel.Name)
+				}
+				return nil
+			},
+		},
+		cli.Command{
+			Name: "post",
+			Action: func(cli *cli.Context) error {
+				channelName := cli.Args()[0]
+				if len(channelName) == 0 {
+					log.Fatalf("missing channel name, please specify it like:\r\nslackme post my-channel 'hello from slackme!'")
+				}
+
+				context, err := LoadContext()
+				if err != nil {
+					log.Fatalf("failed to load context: %v", err)
+				}
+
+				if context.NeedsLogin() {
+					log.Fatalf("not logged in, please run:\n\tslackme login")
+				}
+
+				channel, ok := context.ChannelByName(channelName)
+				if !ok {
+					log.Fatalf("channel not found, please run:\n\tslackme add '%v'", channelName)
+				}
+
+				message := cli.Args()[1]
+				if message == "-" {
+					stdin, err := ioutil.ReadAll(os.Stdin)
+					if err != nil {
+						log.Fatalf("failed to read from stdin: %v", err)
+					}
+					message = string(stdin)
+				}
+
+				if err := channel.Post(message); err != nil {
+					log.Fatalf("failed to post to channel %v: %v", channelName, err)
+				}
+
+				return nil
+			},
+		},
+	}
+	app.Run(os.Args)
 
 	// _, err := LoadConfig()
 	//

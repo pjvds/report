@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
+	"net/http"
 	"os"
 )
 
@@ -13,6 +16,22 @@ type Config struct {
 type Channel struct {
 	Name       string
 	WebhookUrl string
+}
+
+func (this Channel) Post(message string) error {
+	body, _ := json.Marshal(map[string]interface{}{
+		"text": message,
+	})
+	response, err := http.Post(this.WebhookUrl, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return errors.New(response.Status)
+	}
+
+	return nil
 }
 
 func LoadConfig() (Config, error) {
