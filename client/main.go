@@ -16,11 +16,54 @@ import (
 )
 
 type Context struct {
-	UserID   string
 	Email    string
 	Token    string
 	UserName string
 	TeamName string
+
+	Channels []*ChannelInfo
+}
+
+type ChannelInfo struct {
+	ChannelID   string
+	ChannelName string
+	Token       string
+	WebhookURL  string
+}
+
+func (this *Context) HasChannels() bool {
+	return len(this.Channels) > 0
+}
+
+func (this *Context) AddChannel() (bool, error) {
+	addChannelID := xid.New().String()
+	addUrl := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v&redirect_uri=%v",
+		url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.pagekite.me/register"))
+	completeURL := fmt.Sprintf("https://slackme.pagekite.me/%v/channel/%v", url.QueryEscape(this.UserID), url.QueryEscape(addChannelID))
+
+	if err := exec.Command("open", addUrl).Run(); err != nil {
+		return false, err
+	}
+
+	s := spin.New()
+	for {
+		fmt.Printf("\rwaiting for completion %s", s.Next())
+		response, err := http.Get(completeURL)
+		if err != nil {
+			return false, err
+		}
+
+		if response.StatusCode == http.StatusOK {
+			fmt.Printf("\r")
+			body, err := gabs.ParseJSONBuffer(response.Body)
+			if err != nil {
+				return false, err
+			}
+
+			println(body.String())
+			return true, nil
+		}
+	}
 }
 
 func (this *Context) Login() error {
@@ -34,24 +77,23 @@ func (this *Context) Login() error {
 
 	s := spin.New()
 	for {
-		fmt.Printf("\r  \033[36waiting for completion \033[m %s", s.Next())
+		fmt.Printf("\rwaiting for completion %s", s.Next())
 		response, err := http.Get(authCompleteURL)
 		if err != nil {
 			return err
 		}
 
 		if response.StatusCode == http.StatusOK {
-			println()
+			fmt.Printf("\r")
 			body, err := gabs.ParseJSONBuffer(response.Body)
 			if err != nil {
 				return err
 			}
 
-			this.UserID = body.Path("user.id").Data().(string)
-			this.UserName = body.Path("user.name").Data().(string)
-			this.Email = body.Path("user.email").Data().(string)
+			this.Email = body.Path("email").Data().(string)
 			this.Token = body.Path("token").Data().(string)
-			this.TeamName = body.Path("team.name").Data().(string)
+			this.UserName = body.Path("name").Data().(string)
+			this.TeamName = body.Path("team").Data().(string)
 
 			if err := this.Save(); err != nil {
 				return err
@@ -64,7 +106,7 @@ func (this *Context) Login() error {
 }
 
 func (this *Context) NeedsLogin() bool {
-	return len(this.UserID) == 0 || len(this.Token) == 0
+	return len(this.Email) == 0 || len(this.Token) == 0
 }
 
 func LoadContext() (*Context, error) {
@@ -101,6 +143,10 @@ func main() {
 		if err := context.Login(); err != nil {
 			log.Fatalf("failed to login: %v", err)
 		}
+	}
+
+	if !context.HasChannels() {
+		context.AddChannel()
 	}
 
 	// _, err := LoadConfig()
