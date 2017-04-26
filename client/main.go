@@ -49,6 +49,8 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 
 	if err := exec.Command("open", addUrl).Run(); err != nil {
 		return Channel{}, false, err
+	} else {
+		println("open the following url in a browser:\n\n\r" + addUrl)
 	}
 
 	s := spin.New()
@@ -88,6 +90,8 @@ func (this *Context) Login() error {
 
 	if err := exec.Command("open", authUrl).Run(); err != nil {
 		return err
+	} else {
+		println("open the following url in a browser:\n\n\r" + authUrl)
 	}
 
 	s := spin.New()
