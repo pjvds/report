@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -22,14 +21,7 @@ type Context struct {
 	UserName string
 	TeamName string
 
-	Channels []*ChannelInfo
-}
-
-type ChannelInfo struct {
-	ChannelID   string
-	ChannelName string
-	Token       string
-	WebhookURL  string
+	Channels []Channel
 }
 
 func (this *Context) HasChannels() bool {
@@ -37,35 +29,42 @@ func (this *Context) HasChannels() bool {
 }
 
 func (this *Context) AddChannel() (bool, error) {
-	return false, errors.New("not implemented")
-	// addChannelID := xid.New().String()
-	// addUrl := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v&redirect_uri=%v",
-	// 	url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.pagekite.me/register"))
-	// completeURL := fmt.Sprintf("https://slackme.pagekite.me/%v/channel/%v", url.QueryEscape(this.UserID), url.QueryEscape(addChannelID))
-	//
-	// if err := exec.Command("open", addUrl).Run(); err != nil {
-	// 	return false, err
-	// }
-	//
-	// s := spin.New()
-	// for {
-	// 	fmt.Printf("\rwaiting for completion %s", s.Next())
-	// 	response, err := http.Get(completeURL)
-	// 	if err != nil {
-	// 		return false, err
-	// 	}
-	//
-	// 	if response.StatusCode == http.StatusOK {
-	// 		fmt.Printf("\r")
-	// 		body, err := gabs.ParseJSONBuffer(response.Body)
-	// 		if err != nil {
-	// 			return false, err
-	// 		}
-	//
-	// 		println(body.String())
-	// 		return true, nil
-	// 	}
-	// }
+	addChannelID := xid.New().String()
+	addUrl := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v&redirect_uri=%v",
+		url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.pagekite.me/register"))
+	completeURL := fmt.Sprintf("https://slackme.pagekite.me/completion/channel/%v", url.QueryEscape(addChannelID))
+
+	if err := exec.Command("open", addUrl).Run(); err != nil {
+		return false, err
+	}
+
+	s := spin.New()
+	for {
+		fmt.Printf("\rwaiting for completion %s", s.Next())
+		response, err := http.Get(completeURL)
+		if err != nil {
+			return false, err
+		}
+
+		if response.StatusCode == http.StatusOK {
+			fmt.Printf("\r")
+			body, err := gabs.ParseJSONBuffer(response.Body)
+			if err != nil {
+				return false, err
+			}
+
+			this.Channels = append(this.Channels, Channel{
+				Name:       body.Path("name").Data().(string),
+				WebhookUrl: body.Path("webhookURL").Data().(string),
+			})
+
+			if err := this.Save(); err != nil {
+				return false, err
+			}
+
+			return true, nil
+		}
+	}
 }
 
 func (this *Context) Login() error {

@@ -11,9 +11,6 @@ type Config struct {
 }
 
 type Channel struct {
-	Token      string
-	TeamID     string
-	TeamName   string
 	Name       string
 	WebhookUrl string
 }
