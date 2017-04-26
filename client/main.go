@@ -1,26 +1,36 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
+	"log"
 	"os"
 	"os/exec"
 
 	"net/http"
 	"net/url"
 
+	"github.com/Jeffail/gabs"
 	"github.com/rs/xid"
 	spin "github.com/tj/go-spin"
 )
 
-func signin() error {
+type Context struct {
+	UserID   string
+	Email    string
+	Token    string
+	UserName string
+	TeamName string
+}
+
+func (this *Context) Login() error {
 	signinID := xid.New().String()
 	authUrl := "https://slack.com/oauth/authorize?scope=identity.basic,identity.email,identity.team,identity.avatar&client_id=158986125361.158956389232&state=" + url.QueryEscape(signinID) + "&redirect_uri=" + url.QueryEscape("https://slackme.pagekite.me/authenticate")
+	authCompleteURL := fmt.Sprintf("https://slackme.pagekite.me/authenticate/%v", url.QueryEscape(signinID))
+
 	if err := exec.Command("open", authUrl).Run(); err != nil {
 		return err
 	}
-
-	authCompleteURL := fmt.Sprintf("https://slackme.pagekite.me/authenticate/%v", url.QueryEscape(signinID))
 
 	s := spin.New()
 	for {
@@ -32,17 +42,67 @@ func signin() error {
 
 		if response.StatusCode == http.StatusOK {
 			println()
+			body, err := gabs.ParseJSONBuffer(response.Body)
+			if err != nil {
+				return err
+			}
 
-			io.Copy(os.Stdout, response.Body)
+			this.UserID = body.Path("user.id").Data().(string)
+			this.UserName = body.Path("user.name").Data().(string)
+			this.Email = body.Path("user.email").Data().(string)
+			this.Token = body.Path("token").Data().(string)
+			this.TeamName = body.Path("team.name").Data().(string)
+
+			if err := this.Save(); err != nil {
+				return err
+			}
+
+			fmt.Printf("welcome %v, you rock! ❤️\n", this.UserName)
 			return nil
 		}
 	}
+}
 
-	return nil
+func (this *Context) NeedsLogin() bool {
+	return len(this.UserID) == 0 || len(this.Token) == 0
+}
+
+func LoadContext() (*Context, error) {
+	context := new(Context)
+
+	file, err := os.Open(os.ExpandEnv("$HOME/.slackme"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return context, nil
+		}
+		return nil, err
+	}
+
+	return context, json.NewDecoder(file).Decode(context)
+}
+
+func (this *Context) Save() error {
+	file, err := os.Create(os.ExpandEnv("$HOME/.slackme"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return json.NewEncoder(file).Encode(this)
 }
 
 func main() {
-	signin()
+	context, err := LoadContext()
+	if err != nil {
+		log.Fatalf("failed to load context: %v", err)
+	}
+
+	if context.NeedsLogin() {
+		if err := context.Login(); err != nil {
+			log.Fatalf("failed to login: %v", err)
+		}
+	}
+
 	// _, err := LoadConfig()
 	//
 	// if err != nil {
@@ -76,15 +136,4 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal(err.Error())
 	// }
-}
-
-func bootstrap() error {
-	bootstrapId := xid.New().String()
-	authorizeUrl := fmt.Sprintf("https://slack.com/oauth/authorize?redirect_uri=%v&scope=incoming-webhook&client_id=158986125361.158956389232&state=%v", url.QueryEscape("https://slackme.pagekite.me/register"), url.QueryEscape(bootstrapId))
-
-	if err := exec.Command("open", authorizeUrl).Start(); err != nil {
-		return err
-	}
-
-	return nil
 }
