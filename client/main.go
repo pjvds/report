@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -36,40 +37,41 @@ func (this *Context) HasChannels() bool {
 }
 
 func (this *Context) AddChannel() (bool, error) {
-	addChannelID := xid.New().String()
-	addUrl := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v&redirect_uri=%v",
-		url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.pagekite.me/register"))
-	completeURL := fmt.Sprintf("https://slackme.pagekite.me/%v/channel/%v", url.QueryEscape(this.UserID), url.QueryEscape(addChannelID))
-
-	if err := exec.Command("open", addUrl).Run(); err != nil {
-		return false, err
-	}
-
-	s := spin.New()
-	for {
-		fmt.Printf("\rwaiting for completion %s", s.Next())
-		response, err := http.Get(completeURL)
-		if err != nil {
-			return false, err
-		}
-
-		if response.StatusCode == http.StatusOK {
-			fmt.Printf("\r")
-			body, err := gabs.ParseJSONBuffer(response.Body)
-			if err != nil {
-				return false, err
-			}
-
-			println(body.String())
-			return true, nil
-		}
-	}
+	return false, errors.New("not implemented")
+	// addChannelID := xid.New().String()
+	// addUrl := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v&redirect_uri=%v",
+	// 	url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.pagekite.me/register"))
+	// completeURL := fmt.Sprintf("https://slackme.pagekite.me/%v/channel/%v", url.QueryEscape(this.UserID), url.QueryEscape(addChannelID))
+	//
+	// if err := exec.Command("open", addUrl).Run(); err != nil {
+	// 	return false, err
+	// }
+	//
+	// s := spin.New()
+	// for {
+	// 	fmt.Printf("\rwaiting for completion %s", s.Next())
+	// 	response, err := http.Get(completeURL)
+	// 	if err != nil {
+	// 		return false, err
+	// 	}
+	//
+	// 	if response.StatusCode == http.StatusOK {
+	// 		fmt.Printf("\r")
+	// 		body, err := gabs.ParseJSONBuffer(response.Body)
+	// 		if err != nil {
+	// 			return false, err
+	// 		}
+	//
+	// 		println(body.String())
+	// 		return true, nil
+	// 	}
+	// }
 }
 
 func (this *Context) Login() error {
 	signinID := xid.New().String()
 	authUrl := "https://slack.com/oauth/authorize?scope=identity.basic,identity.email,identity.team,identity.avatar&client_id=158986125361.158956389232&state=" + url.QueryEscape(signinID) + "&redirect_uri=" + url.QueryEscape("https://slackme.pagekite.me/authenticate")
-	authCompleteURL := fmt.Sprintf("https://slackme.pagekite.me/authenticate/%v", url.QueryEscape(signinID))
+	authCompleteURL := fmt.Sprintf("https://slackme.pagekite.me/completion/authentication/%v", url.QueryEscape(signinID))
 
 	if err := exec.Command("open", authUrl).Run(); err != nil {
 		return err
