@@ -48,8 +48,6 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 	completeURL := fmt.Sprintf("https://slackme.org/a/completion/channel/%v", url.QueryEscape(addChannelID))
 
 	if err := exec.Command("open", addUrl).Run(); err != nil {
-		return Channel{}, false, err
-	} else {
 		println("open the following url in a browser:\n\n\r" + addUrl)
 	}
 
@@ -89,8 +87,6 @@ func (this *Context) Login() error {
 	authCompleteURL := fmt.Sprintf("https://slackme.org/a/completion/authentication/%v", url.QueryEscape(signinID))
 
 	if err := exec.Command("open", authUrl).Run(); err != nil {
-		return err
-	} else {
 		println("open the following url in a browser:\n\n\r" + authUrl)
 	}
 
