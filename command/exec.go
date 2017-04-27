@@ -2,19 +2,49 @@ package command
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"strings"
+	"text/template"
 	"time"
 
 	. "github.com/pjvds/slackme/context"
 
 	"github.com/urfave/cli"
 )
+
+type ExecResult struct {
+	Command  string
+	Output   string
+	Duration time.Duration
+	DidStart bool
+	Err      error
+}
+
+var messageTemplate *template.Template
+
+func init() {
+	var err error
+	messageTemplate, err = template.New("exec").Parse("The command *{{.Command}}* took *{{.Duration}}* {{if .Err}}and exited with *{{.Err}}*{{- end}}{{if .Output}}\n\n```{{.Output}}```{{- end}}")
+	if err != nil {
+		panic(err)
+	}
+}
+
+var funcMap = template.FuncMap{
+	// The name "title" is what the function will be called in the template text.
+	"keepLastN": func(s string, i int) string {
+		runes := []rune(s)
+		if len(runes) > i {
+			trim := len(runes) - i
+			return string(runes[trim:])
+		}
+		return s
+	},
+}
 
 var Exec = cli.Command{
 	Name: "exec",
@@ -69,40 +99,40 @@ var Exec = cli.Command{
 		}
 
 		started := time.Now()
+		result := ExecResult{
+			Command: strings.Join(append([]string{name}, normalizedArgs...), " "),
+		}
+
 		if err := command.Start(); err != nil {
-			message := fmt.Sprintf("Failed to start command *%v*: `%v`",
-				strings.Join(append([]string{name}, normalizedArgs...), " "), err.Error())
+			result.Err = err
+			result.DidStart = false
+		} else {
+			result.DidStart = true
 
-			if err := channel.Post(message); err != nil {
-				log.Fatalf("failed to post to channel %v: %v", channelName, err)
-			}
-			return nil
-		}
-
-		signals := make(chan os.Signal, 1)
-		signal.Notify(signals, os.Interrupt, os.Kill)
-		go func() {
-			for sig := range signals {
-				if command.Process != nil {
-					command.Process.Signal(sig)
+			signals := make(chan os.Signal, 1)
+			signal.Notify(signals, os.Interrupt, os.Kill)
+			go func() {
+				for sig := range signals {
+					if command.Process != nil {
+						command.Process.Signal(sig)
+					}
 				}
-			}
-		}()
+			}()
 
-		status := ""
-		if err := command.Wait(); err != nil {
-			if exitErr, ok := err.(*exec.ExitError); ok {
-				status = exitErr.String()
-			} else {
-				status = "error " + err.Error()
+			if err := command.Wait(); err != nil {
+				result.Err = err
 			}
+			result.Duration = time.Since(started)
+			result.Output = outputBuffer.String()
+
+			signal.Stop(signals)
 		}
-		signal.Stop(signals)
 
-		message := fmt.Sprintf("The command *%v* took *%v* and exited with *%v*\n\n```%v```",
-			strings.Join(append([]string{name}, normalizedArgs...), " "), time.Since(started), status, string(outputBuffer.Bytes()))
-
-		if err := channel.Post(message); err != nil {
+		messageBuffer := new(bytes.Buffer)
+		if err := messageTemplate.Execute(messageBuffer, result); err != nil {
+			log.Fatalf("failed to parse template: %v\n", err)
+		}
+		if err := channel.Post(messageBuffer.String()); err != nil {
 			log.Fatalf("failed to post to channel %v: %v", channelName, err)
 		}
 
