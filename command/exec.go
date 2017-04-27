@@ -113,7 +113,7 @@ var Exec = cli.Command{
 				runes := []rune(s)
 				if len(runes) > i {
 					prefix := "[truncate]\n"
-					trim := len(runes) - (len(prefix) + i)
+					trim := len(runes) - (i - len(prefix))
 					return prefix + string(runes[trim:])
 				}
 				return s
