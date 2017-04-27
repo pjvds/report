@@ -253,6 +253,14 @@ func main() {
 					log.Fatalf("missing channel name, please specify it like:\n\n\tslackme post -c '#general' 'hello from slackme!'\n\nOr set the SLACKME_CHANNEL environment variable.")
 				}
 
+				if len(cli.Args()) == 0 {
+					log.Fatalf("missing message, please specify it like:\n\n\tslackme post -c '#general' 'hello from slackme!'")
+				}
+
+				if len(cli.Args()) > 1 {
+					log.Fatalf("multiple arguments given, please specify your message as an single argument to post, like:\n\n\tslackme post -c '#general' 'hello from slackme!'")
+				}
+
 				context, err := LoadContext()
 				if err != nil {
 					log.Fatalf("failed to load context: %v", err)
