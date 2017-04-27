@@ -24,28 +24,6 @@ type ExecResult struct {
 	Err      error
 }
 
-var messageTemplate *template.Template
-
-func init() {
-	var err error
-	messageTemplate, err = template.New("exec").Parse("The command *{{.Command}}* took *{{.Duration}}* {{if .Err}}and exited with *{{.Err}}*{{- end}}{{if .Output}}\n\n```{{.Output}}```{{- end}}")
-	if err != nil {
-		panic(err)
-	}
-}
-
-var funcMap = template.FuncMap{
-	// The name "title" is what the function will be called in the template text.
-	"keepLastN": func(s string, i int) string {
-		runes := []rune(s)
-		if len(runes) > i {
-			trim := len(runes) - i
-			return string(runes[trim:])
-		}
-		return s
-	},
-}
-
 var Exec = cli.Command{
 	Name: "exec",
 	Flags: []cli.Flag{
@@ -123,12 +101,23 @@ var Exec = cli.Command{
 				result.Err = err
 			}
 			result.Duration = time.Since(started)
-			result.Output = outputBuffer.String()
+			result.Output = strings.Trim(outputBuffer.String(), "\t\r\n")
 
 			signal.Stop(signals)
 		}
 
 		messageBuffer := new(bytes.Buffer)
+		messageTemplate := template.Must(template.New("exec").Funcs(template.FuncMap{
+			// The name "title" is what the function will be called in the template text.
+			"keep": func(s string, i int) string {
+				runes := []rune(s)
+				if len(runes) > i {
+					trim := len(runes) - i
+					return string(runes[trim:])
+				}
+				return s
+			}}).Parse("```$ {{.Command}}\n{{if .Output}}{{keep .Output 500}}{{- end}}{{if .Err}}{{.Err}}{{- end}}```"))
+
 		if err := messageTemplate.Execute(messageBuffer, result); err != nil {
 			log.Fatalf("failed to parse template: %v\n", err)
 		}
