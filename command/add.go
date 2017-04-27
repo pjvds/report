@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	. "github.com/pjvds/slackme"
+	. "github.com/pjvds/slackme/context"
 	"github.com/urfave/cli"
 )
 
