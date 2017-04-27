@@ -246,6 +246,9 @@ func main() {
 					Name:   "c",
 					EnvVar: "SLACKME_CHANNEL",
 				},
+				cli.BoolFlag{
+					Name: "code",
+				},
 			},
 			Action: func(cli *cli.Context) error {
 				channelName := cli.String("c")
@@ -282,6 +285,10 @@ func main() {
 						log.Fatalf("failed to read from stdin: %v", err)
 					}
 					message = string(stdin)
+				}
+
+				if cli.Bool("code") {
+					message = "```" + message + "```"
 				}
 
 				if err := channel.Post(message); err != nil {
