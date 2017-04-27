@@ -1,0 +1,31 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "l6kv4OCHCG6DAuPYi0H3aCfnKtQ=",
+			"path": "github.com/Jeffail/gabs",
+			"revision": "c9fb5b700cddb62013b2ee9dfc9ce011caea55e0",
+			"revisionTime": "2017-03-22T22:36:35Z"
+		},
+		{
+			"checksumSHA1": "fDyimT80z3rh9N7Za0PoVQeQOlA=",
+			"path": "github.com/rs/xid",
+			"revision": "5f07722d6bc58969819ff49cdcc2d19688c957d0",
+			"revisionTime": "2017-01-06T15:56:57Z"
+		},
+		{
+			"checksumSHA1": "xLPZciQaExQmXnr/4AwADdj1sTk=",
+			"path": "github.com/tj/go-spin",
+			"revision": "866762925be273d8db6a8b816f359ca41d61bcdb",
+			"revisionTime": "2015-12-20T18:50:49Z"
+		},
+		{
+			"checksumSHA1": "Y2hFNyygY4Zx41H2phH/rEJgRRo=",
+			"path": "github.com/urfave/cli",
+			"revision": "b4f4786f378c0c1d3336b5bb798094b166edf5a9",
+			"revisionTime": "2016-11-13T23:35:18Z"
+		}
+	],
+	"rootPath": "github.com/pjvds/slackme"
+}
