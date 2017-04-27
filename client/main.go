@@ -233,10 +233,16 @@ func main() {
 		},
 		cli.Command{
 			Name: "post",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "c",
+					EnvVar: "SLACKME_CHANNEL",
+				},
+			},
 			Action: func(cli *cli.Context) error {
-				channelName := cli.Args()[0]
+				channelName := cli.String("c")
 				if len(channelName) == 0 {
-					log.Fatalf("missing channel name, please specify it like:\r\nslackme post my-channel 'hello from slackme!'")
+					log.Fatalf("missing channel name, please specify it like:\n\n\tslackme post -c '#general' 'hello from slackme!'\n\nOr set the SLACKME_CHANNEL environment variable.")
 				}
 
 				context, err := LoadContext()
