@@ -9,4 +9,4 @@ RUN go-wrapper install \
  && rm -rf $GOPATH/pkg \
  && rm -rf $GOPATH/src
 
-ENTRYPOINT ["cli"]
+ENTRYPOINT ["slackme"]
