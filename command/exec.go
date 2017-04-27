@@ -2,6 +2,7 @@ package command
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -82,6 +83,8 @@ var Exec = cli.Command{
 		}
 
 		if err := command.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+
 			result.Err = err
 			result.DidStart = false
 		} else {
