@@ -130,7 +130,12 @@ func (this *Context) NeedsLogin() bool {
 func LoadContext() (*Context, error) {
 	context := new(Context)
 
-	file, err := os.Open(os.ExpandEnv("$HOME/.slackme"))
+	path := os.ExpandEnv("SLACKME_FILE")
+	if len(path) == 0 {
+		path = os.ExpandEnv("$HOME/.slackme")
+	}
+
+	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return context, nil
