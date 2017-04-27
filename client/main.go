@@ -195,7 +195,7 @@ func main() {
 				}
 
 				if !context.NeedsLogin() {
-					if !askForConfirmation(fmt.Sprintf("$v already logged in, are you sure you want to login and loose the context of that user?", context.Email)) {
+					if !askForConfirmation(fmt.Sprintf("%v already logged in, are you sure you want to login and loose the context of that user?", context.Email)) {
 						return nil
 					}
 				}
