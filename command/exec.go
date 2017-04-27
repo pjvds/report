@@ -116,7 +116,7 @@ var Exec = cli.Command{
 					return string(runes[trim:])
 				}
 				return s
-			}}).Parse("```$ {{.Command}}\n{{if .Output}}{{keep .Output 500}}{{- end}}{{if .Err}}{{.Err}}{{- end}}```"))
+			}}).Parse("```$ {{.Command}}{{if .Output}}\n{{keep .Output 500}}{{- end}}{{if .Err}}\n{{.Err}}{{- end}}```"))
 
 		if err := messageTemplate.Execute(messageBuffer, result); err != nil {
 			log.Fatalf("failed to parse template: %v\n", err)
