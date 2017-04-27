@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
 	"time"
 
@@ -52,19 +53,12 @@ var Exec = cli.Command{
 		if len(cli.Args()) > 1 {
 			args = cli.Args()[1:]
 		}
+
 		command := exec.Command(name, args...)
 		outputBuffer := new(bytes.Buffer)
 
 		command.Stdout = io.MultiWriter(os.Stdout, outputBuffer)
 		command.Stderr = io.MultiWriter(os.Stderr, outputBuffer)
-
-		started := time.Now()
-		err = command.Run()
-
-		exitCode := "0"
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			exitCode = exitErr.String()
-		}
 
 		normalizedArgs := make([]string, len(args))
 		for i, arg := range args {
@@ -74,8 +68,39 @@ var Exec = cli.Command{
 			normalizedArgs[i] = arg
 		}
 
+		started := time.Now()
+		if err := command.Start(); err != nil {
+			message := fmt.Sprintf("Failed to start command *%v*: `%v`",
+				strings.Join(append([]string{name}, normalizedArgs...), " "), err.Error())
+
+			if err := channel.Post(message); err != nil {
+				log.Fatalf("failed to post to channel %v: %v", channelName, err)
+			}
+			return nil
+		}
+
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, os.Interrupt, os.Kill)
+		go func() {
+			for sig := range signals {
+				if command.Process != nil {
+					command.Process.Signal(sig)
+				}
+			}
+		}()
+
+		status := ""
+		if err := command.Wait(); err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				status = exitErr.String()
+			} else {
+				status = "error " + err.Error()
+			}
+		}
+		signal.Stop(signals)
+
 		message := fmt.Sprintf("The command *%v* took *%v* and exited with *%v*\n\n```%v```",
-			strings.Join(append([]string{name}, normalizedArgs...), " "), time.Since(started), exitCode, string(outputBuffer.Bytes()))
+			strings.Join(append([]string{name}, normalizedArgs...), " "), time.Since(started), status, string(outputBuffer.Bytes()))
 
 		if err := channel.Post(message); err != nil {
 			log.Fatalf("failed to post to channel %v: %v", channelName, err)
