@@ -267,7 +267,7 @@ func main() {
 					log.Fatalf("channel not found, please run:\n\tslackme add '%v'", channelName)
 				}
 
-				message := cli.Args()[1]
+				message := cli.Args()[0]
 				if message == "-" {
 					stdin, err := ioutil.ReadAll(os.Stdin)
 					if err != nil {
