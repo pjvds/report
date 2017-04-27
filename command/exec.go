@@ -112,8 +112,9 @@ var Exec = cli.Command{
 			"keep": func(s string, i int) string {
 				runes := []rune(s)
 				if len(runes) > i {
-					trim := len(runes) - i
-					return string(runes[trim:])
+					prefix := "[truncate]\n"
+					trim := len(runes) - (len(prefix) + i)
+					return prefix + string(runes[trim:])
 				}
 				return s
 			}}).Parse("```$ {{.Command}}{{if .Output}}\n{{keep .Output 500}}{{- end}}{{if .Err}}\n{{.Err}}{{- end}}```"))
