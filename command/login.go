@@ -15,7 +15,7 @@ import (
 var Login = cli.Command{
 	Name: "login",
 	Action: func(cli *cli.Context) error {
-		context, err := LoadContext()
+		context, err := LoadContext(cli)
 		if err != nil {
 			log.Fatalf("failed to load context: %v", err)
 		}

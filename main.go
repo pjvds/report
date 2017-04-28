@@ -12,6 +12,10 @@ func main() {
 	app.Name = "slackme"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
+			Name:   "file, f",
+			EnvVar: "SLACKME_FILE",
+		},
+		cli.StringFlag{
 			Name:   "host",
 			EnvVar: "SLACKME_HOST",
 			Value:  "https://slackme.org",

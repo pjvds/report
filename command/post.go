@@ -35,7 +35,7 @@ var Post = cli.Command{
 			log.Fatalf("multiple arguments given, please specify your message as an single argument to post, like:\n\n\tslackme post -c '#general' 'hello from slackme!'")
 		}
 
-		context, err := LoadContext()
+		context, err := LoadContext(cli)
 		if err != nil {
 			log.Fatalf("failed to load context: %v", err)
 		}

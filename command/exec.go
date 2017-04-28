@@ -43,7 +43,7 @@ var Exec = cli.Command{
 			log.Fatalf("no command specified, please specify it like:\n\n\tslackme exec -c '#general' ./backup.sh'\n\nOr set the SLACKME_CHANNEL environment variable.")
 		}
 
-		context, err := LoadContext()
+		context, err := LoadContext(cli)
 		if err != nil {
 			log.Fatalf("failed to load context: %v", err)
 		}
