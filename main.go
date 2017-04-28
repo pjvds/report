@@ -32,6 +32,7 @@ func main() {
 		command.Add,
 		command.Post,
 		command.Exec,
+		command.List,
 	}
 	app.Run(os.Args)
 }
