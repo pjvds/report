@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 
 	. "github.com/pjvds/slackme/context"
 	"github.com/urfave/cli"
@@ -11,22 +10,22 @@ import (
 var Add = cli.Command{
 	Name:    "add-channel",
 	Aliases: []string{"ac"},
-	Action: func(cli *cli.Context) error {
-		context, err := LoadContext()
+	Action: func(c *cli.Context) error {
+		context, err := LoadContext(c)
 		if err != nil {
-			log.Fatalf("failed to load context: %v", err)
+			return cli.NewExitError(fmt.Sprintf("failed to load context: %v", err), CONTEXT_ERR)
 		}
 
 		if context.NeedsLogin() {
-			log.Fatalf("need login, please run:\n\tslackme login")
+			return ErrNeedLogin
 		}
 
 		channel, ok, err := context.AddChannel()
 		if err != nil {
-			log.Fatalf("failed to add channel: %v", err)
+			return cli.NewExitError(fmt.Sprintf("failed to load context: %v", err), NEED_LOGIN)
 		}
 		if ok {
-			fmt.Printf("channel added succesfully, run to post:\n\tslacke -c '%v' post", channel.Name)
+			fmt.Printf("channel added succesfully, run to post:\n\n\tslacke -c '%v' post", channel.Name)
 		}
 		return nil
 	},
