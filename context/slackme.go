@@ -14,6 +14,7 @@ import (
 	"github.com/Jeffail/gabs"
 	"github.com/rs/xid"
 	spin "github.com/tj/go-spin"
+	"github.com/urfave/cli"
 )
 
 type Context struct {
@@ -23,6 +24,8 @@ type Context struct {
 	TeamName string
 
 	Channels []Channel
+
+	path string
 }
 
 type Channel struct {
@@ -142,15 +145,15 @@ func (this *Context) NeedsLogin() bool {
 	return len(this.Email) == 0 || len(this.Token) == 0
 }
 
-func LoadContext() (*Context, error) {
+func LoadContext(ctx *cli.Context) (*Context, error) {
 	context := new(Context)
 
-	path := os.ExpandEnv("$SLACKME_FILE")
-	if len(path) == 0 {
-		path = os.ExpandEnv("$HOME/.slackme")
+	context.path = ctx.String("file")
+	if len(context.path) == 0 {
+		context.path = os.ExpandEnv("$HOME/.slackme")
 	}
 
-	file, err := os.Open(path)
+	file, err := os.Open(context.path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return context, nil
@@ -162,7 +165,7 @@ func LoadContext() (*Context, error) {
 }
 
 func (this *Context) Save() error {
-	file, err := os.Create(os.ExpandEnv("$HOME/.slackme"))
+	file, err := os.Create(this.path)
 	if err != nil {
 		return err
 	}
