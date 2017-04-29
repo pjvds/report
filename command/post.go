@@ -13,26 +13,34 @@ import (
 var Post = cli.Command{
 	Name: "post",
 	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:   "c",
-			EnvVar: "SLACKME_CHANNEL",
-		},
 		cli.BoolFlag{
 			Name: "code",
 		},
 	},
+	BashComplete: func(c *cli.Context) {
+		if c.NArg() == 0 {
+			return
+		}
+
+		if context, err := LoadContext(c); err == nil {
+			for _, channel := range context.Channels {
+				println(channel.Name)
+				return
+			}
+		}
+	},
 	Action: func(cli *cli.Context) error {
-		channelName := cli.String("c")
+		if cli.NArg() != 2 {
+			print("\"slack post\" requires 2 arguments.\nSee 'docker post --help'.\n\n" +
+				"Usage:  docker post [OPTIONS] CHANNEL_NAME MESSAGE\n")
+			return nil
+		}
+
+		channelName := cli.Args().First()
 		if len(channelName) == 0 {
-			log.Fatalf("missing channel name, please specify it like:\n\n\tslackme post -c '#general' 'hello from slackme!'\n\nOr set the SLACKME_CHANNEL environment variable.")
-		}
-
-		if len(cli.Args()) == 0 {
-			log.Fatalf("missing message, please specify it like:\n\n\tslackme post -c '#general' 'hello from slackme!'")
-		}
-
-		if len(cli.Args()) > 1 {
-			log.Fatalf("multiple arguments given, please specify your message as an single argument to post, like:\n\n\tslackme post -c '#general' 'hello from slackme!'")
+			print("\"slack post\" requires 2 arguments.\nSee 'docker post --help'.\n\n" +
+				"Usage:  docker post [OPTIONS] CHANNEL_NAME MESSAGE\n")
+			return nil
 		}
 
 		context, err := LoadContext(cli)
@@ -49,7 +57,7 @@ var Post = cli.Command{
 			log.Fatalf("channel not found, please run:\n\tslackme add '%v'", channelName)
 		}
 
-		message := cli.Args()[0]
+		message := cli.Args()[1]
 		if message == "-" {
 			stdin, err := ioutil.ReadAll(os.Stdin)
 			if err != nil {

@@ -10,6 +10,7 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "slackme"
+	app.EnableBashCompletion = true
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "file, f",
