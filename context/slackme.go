@@ -14,7 +14,7 @@ import (
 	"github.com/Jeffail/gabs"
 	"github.com/rs/xid"
 	spin "github.com/tj/go-spin"
-	"github.com/urfave/cli"
+	"gopkg.in/urfave/cli.v2"
 )
 
 type Context struct {

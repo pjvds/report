@@ -9,10 +9,10 @@
 			"revisionTime": "2017-03-22T22:36:35Z"
 		},
 		{
-			"checksumSHA1": "fDyimT80z3rh9N7Za0PoVQeQOlA=",
+			"checksumSHA1": "Lp4RpMr1owP/yE56R50NuR6xKnA=",
 			"path": "github.com/rs/xid",
-			"revision": "5f07722d6bc58969819ff49cdcc2d19688c957d0",
-			"revisionTime": "2017-01-06T15:56:57Z"
+			"revision": "7103a466901a3718bf6e97b5914397a7ba6da651",
+			"revisionTime": "2017-04-21T13:49:16Z"
 		},
 		{
 			"checksumSHA1": "xLPZciQaExQmXnr/4AwADdj1sTk=",
@@ -21,10 +21,10 @@
 			"revisionTime": "2015-12-20T18:50:49Z"
 		},
 		{
-			"checksumSHA1": "Y2hFNyygY4Zx41H2phH/rEJgRRo=",
-			"path": "github.com/urfave/cli",
-			"revision": "b4f4786f378c0c1d3336b5bb798094b166edf5a9",
-			"revisionTime": "2016-11-13T23:35:18Z"
+			"checksumSHA1": "yFolYpsrXIjWE0UjR8ChC6Nmrhg=",
+			"path": "gopkg.in/urfave/cli.v2",
+			"revision": "61c3eb6ba1da1df17cd50f1456a9252d92bf5edd",
+			"revisionTime": "2017-04-24T21:45:55Z"
 		}
 	],
 	"rootPath": "github.com/pjvds/slackme"

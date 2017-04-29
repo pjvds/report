@@ -4,16 +4,16 @@ import (
 	"fmt"
 
 	. "github.com/pjvds/slackme/context"
-	"github.com/urfave/cli"
+	"gopkg.in/urfave/cli.v2"
 )
 
-var List = cli.Command{
+var List = &cli.Command{
 	Name:    "list",
 	Aliases: []string{"ls"},
 	Action: func(c *cli.Context) error {
 		context, err := LoadContext(c)
 		if err != nil {
-			return cli.NewExitError(fmt.Sprintf("failed to load context: %v", err), CONTEXT_ERR)
+			return cli.Exit(fmt.Sprintf("failed to load context: %v", err), CONTEXT_ERR)
 		}
 
 		if context.NeedsLogin() {

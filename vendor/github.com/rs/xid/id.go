@@ -30,7 +30,7 @@
 //   - Non configured, you don't need set a unique machine and/or data center id
 //   - K-ordered
 //   - Embedded time with 1 second precision
-//   - Unicity guaranted for 16,777,216 (20 bits) unique ids per second and per host/process
+//   - Unicity guaranted for 16,777,216 (24 bits) unique ids per second and per host/process
 //
 // Best used with xlog's RequestIDHandler (https://godoc.org/github.com/rs/xlog#RequestIDHandler).
 //
@@ -42,9 +42,9 @@
 package xid
 
 import (
-	"bytes"
 	"crypto/md5"
 	"crypto/rand"
+	"database/sql/driver"
 	"encoding/base32"
 	"encoding/binary"
 	"errors"
@@ -67,7 +67,7 @@ const (
 )
 
 // ErrInvalidID is returned when trying to unmarshal an invalid ID
-var ErrInvalidID = errors.New("invalid ID")
+var ErrInvalidID = errors.New("xid: invalid ID")
 
 // objectIDCounter is atomically incremented when generating a new ObjectId
 // using NewObjectId() function. It's used as a counter part of an id.
@@ -78,7 +78,12 @@ var objectIDCounter = randInt()
 // to NewObjectId function.
 var machineID = readMachineID()
 
+// pid stores the current process id
 var pid = os.Getpid()
+
+// b32enc stores a custom version of the base32 encoding with lower case
+// letters.
+var b32enc = base32.NewEncoding("0123456789abcdefghijklmnopqrstuv")
 
 // readMachineId generates machine id and puts it into the machineId global
 // variable. If this function fails to get the hostname, it will cause
@@ -92,7 +97,7 @@ func readMachineID() []byte {
 	} else {
 		// Fallback to rand number if machine id can't be gathered
 		if _, randErr := rand.Reader.Read(id); randErr != nil {
-			panic(fmt.Errorf("Cannot get hostname nor generate a random number: %v; %v", err, randErr))
+			panic(fmt.Errorf("xid: cannot get hostname nor generate a random number: %v; %v", err, randErr))
 		}
 	}
 	return id
@@ -102,7 +107,7 @@ func readMachineID() []byte {
 func randInt() uint32 {
 	b := make([]byte, 3)
 	if _, err := rand.Reader.Read(b); err != nil {
-		panic(fmt.Errorf("Cannot generate random number: %v;", err))
+		panic(fmt.Errorf("xid: cannot generate random number: %v;", err))
 	}
 	return uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])
 }
@@ -143,8 +148,8 @@ func (id ID) String() string {
 // MarshalText implements encoding/text TextMarshaler interface
 func (id ID) MarshalText() ([]byte, error) {
 	text := make([]byte, encodedLen)
-	base32.HexEncoding.Encode(text, id[:])
-	return bytes.ToLower(text[:trimLen]), nil
+	b32enc.Encode(text, id[:])
+	return text[:trimLen], nil
 }
 
 // UnmarshalText implements encoding/text TextUnmarshaler interface
@@ -157,16 +162,13 @@ func (id *ID) UnmarshalText(text []byte) error {
 			return ErrInvalidID
 		}
 	}
-	b := make([]byte, decodedLen)
-	_, err := base32.HexEncoding.Decode(b, append(bytes.ToUpper(text), '=', '=', '=', '='))
-	for i, c := range b {
-		id[i] = c
-		// The decoded len is larger than the actual len because of padding.
-		// Stop copying data when we reach raw len.
-		if i+1 == rawLen {
-			break
-		}
-	}
+	var (
+		bufe [trimLen + 4]byte
+		bufd [decodedLen]byte
+	)
+	copy(bufe[:], text)
+	_, err := b32enc.Decode(bufd[:], append(bufe[:trimLen], '=', '=', '=', '='))
+	copy(id[:], bufd[:])
 	return err
 }
 
@@ -196,4 +198,20 @@ func (id ID) Counter() int32 {
 	b := id[9:12]
 	// Counter is stored as big-endian 3-byte value
 	return int32(uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2]))
+}
+
+// Value implements the driver.Valuer interface.
+func (id ID) Value() (driver.Value, error) {
+	b, err := id.MarshalText()
+	return string(b), err
+}
+
+// Scan implements the sql.Scanner interface.
+func (id *ID) Scan(value interface{}) (err error) {
+	switch val := value.(type) {
+	case string:
+		return id.UnmarshalText([]byte(val))
+	default:
+		return fmt.Errorf("xid: scanning unsupported type: %T", value)
+	}
 }

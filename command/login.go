@@ -9,10 +9,10 @@ import (
 
 	. "github.com/pjvds/slackme/context"
 
-	"github.com/urfave/cli"
+	"gopkg.in/urfave/cli.v2"
 )
 
-var Login = cli.Command{
+var Login = &cli.Command{
 	Name: "login",
 	Action: func(cli *cli.Context) error {
 		context, err := LoadContext(cli)

@@ -1,6 +1,6 @@
 package command
 
-import "github.com/urfave/cli"
+import "gopkg.in/urfave/cli.v2"
 
 const (
 	CONTEXT_ERR     = iota + 100
@@ -9,5 +9,5 @@ const (
 )
 
 var (
-	ErrNeedLogin = cli.NewExitError("not logged in, please run:\n\n\tslackme login", NEED_LOGIN)
+	ErrNeedLogin = cli.Exit("not logged in, please run:\n\n\tslackme login", NEED_LOGIN)
 )

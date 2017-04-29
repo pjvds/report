@@ -7,21 +7,17 @@ import (
 
 	. "github.com/pjvds/slackme/context"
 
-	"github.com/urfave/cli"
+	"gopkg.in/urfave/cli.v2"
 )
 
-var Post = cli.Command{
+var Post = &cli.Command{
 	Name: "post",
 	Flags: []cli.Flag{
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name: "code",
 		},
 	},
-	BashComplete: func(c *cli.Context) {
-		if c.NArg() == 0 {
-			return
-		}
-
+	ShellComplete: func(c *cli.Context) {
 		if context, err := LoadContext(c); err == nil {
 			for _, channel := range context.Channels {
 				println(channel.Name)
@@ -31,15 +27,15 @@ var Post = cli.Command{
 	},
 	Action: func(cli *cli.Context) error {
 		if cli.NArg() != 2 {
-			print("\"slack post\" requires 2 arguments.\nSee 'docker post --help'.\n\n" +
-				"Usage:  docker post [OPTIONS] CHANNEL_NAME MESSAGE\n")
+			print("\"slackme post\" requires 2 arguments.\nSee 'docker post --help'.\n\n" +
+				"Usage: slackme post [OPTIONS] CHANNEL_NAME MESSAGE\n")
 			return nil
 		}
 
 		channelName := cli.Args().First()
 		if len(channelName) == 0 {
-			print("\"slack post\" requires 2 arguments.\nSee 'docker post --help'.\n\n" +
-				"Usage:  docker post [OPTIONS] CHANNEL_NAME MESSAGE\n")
+			print("\"slackme post\" requires 2 arguments.\nSee 'docker post --help'.\n\n" +
+				"Usage: slackme post [OPTIONS] CHANNEL_NAME MESSAGE\n")
 			return nil
 		}
 
@@ -57,7 +53,7 @@ var Post = cli.Command{
 			log.Fatalf("channel not found, please run:\n\tslackme add '%v'", channelName)
 		}
 
-		message := cli.Args()[1]
+		message := cli.Args().Get(1)
 		if message == "-" {
 			stdin, err := ioutil.ReadAll(os.Stdin)
 			if err != nil {

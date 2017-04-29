@@ -14,7 +14,7 @@ import (
 
 	. "github.com/pjvds/slackme/context"
 
-	"github.com/urfave/cli"
+	"gopkg.in/urfave/cli.v2"
 )
 
 type ExecResult struct {
@@ -25,12 +25,12 @@ type ExecResult struct {
 	Err      error
 }
 
-var Exec = cli.Command{
+var Exec = &cli.Command{
 	Name: "exec",
 	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:   "c",
-			EnvVar: "SLACKME_CHANNEL",
+		&cli.StringFlag{
+			Name:    "c",
+			EnvVars: []string{"SLACKME_CHANNEL"},
 		},
 	},
 	Action: func(cli *cli.Context) error {
@@ -39,7 +39,7 @@ var Exec = cli.Command{
 			log.Fatalf("missing channel name, please specify it like:\n\n\tslackme exec -c '#general' ./backup.sh'\n\nOr set the SLACKME_CHANNEL environment variable.")
 		}
 
-		if len(cli.Args()) == 0 {
+		if cli.Args().Present() {
 			log.Fatalf("no command specified, please specify it like:\n\n\tslackme exec -c '#general' ./backup.sh'\n\nOr set the SLACKME_CHANNEL environment variable.")
 		}
 
@@ -57,10 +57,10 @@ var Exec = cli.Command{
 			log.Fatalf("channel not found, please run:\n\tslackme add '%v'", channelName)
 		}
 
-		name := cli.Args()[0]
+		name := cli.Args().First()
 		args := []string{}
-		if len(cli.Args()) > 1 {
-			args = cli.Args()[1:]
+		if cli.NArg() > 1 {
+			args = cli.Args().Tail()
 		}
 
 		command := exec.Command(name, args...)
