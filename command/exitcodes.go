@@ -3,9 +3,10 @@ package command
 import "gopkg.in/urfave/cli.v2"
 
 const (
-	CONTEXT_ERR     = iota + 100
-	NEED_LOGIN      = iota
-	COMMAND_FAILURE = iota
+	CONTEXT_ERR       = iota + 100
+	NEED_LOGIN        = iota
+	COMMAND_FAILURE   = iota
+	CHANNEL_NOT_FOUND = iota
 )
 
 var (

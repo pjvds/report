@@ -20,7 +20,7 @@ var Post = &cli.Command{
 	ShellComplete: func(c *cli.Context) {
 		if context, err := LoadContext(c); err == nil {
 			for _, channel := range context.Channels {
-				println(channel.Name)
+				println(channel.ChannelName)
 				return
 			}
 		}
@@ -44,13 +44,9 @@ var Post = &cli.Command{
 			log.Fatalf("failed to load context: %v", err)
 		}
 
-		if context.NeedsLogin() {
-			log.Fatalf("not logged in, please run:\n\tslackme login")
-		}
-
-		channel, ok := context.ChannelByName(channelName)
-		if !ok {
-			log.Fatalf("channel not found, please run:\n\tslackme add '%v'", channelName)
+		channel, err := context.ChannelByName(channelName)
+		if err != nil {
+			return err
 		}
 
 		message := cli.Args().Get(1)

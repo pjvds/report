@@ -16,21 +16,11 @@ var List = &cli.Command{
 			return cli.Exit(fmt.Sprintf("failed to load context: %v", err), CONTEXT_ERR)
 		}
 
-		if context.NeedsLogin() {
-			return ErrNeedLogin
-		}
-
-		fmt.Printf("name: %v\n", context.UserName)
-		fmt.Printf("team: %v\n", context.UserName)
-		fmt.Printf("email: %v\n", context.Email)
-
 		if len(context.Channels) == 0 {
-			fmt.Printf("\nno channels!\n")
+			fmt.Printf("no channels\n")
 		} else {
-			fmt.Printf("\nchannels:\n")
-
 			for _, channel := range context.Channels {
-				fmt.Printf("\t%v\n", channel.Name)
+				fmt.Printf("%v/%v\n", channel.TeamName, channel.ChannelName)
 			}
 		}
 		return nil

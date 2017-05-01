@@ -23,7 +23,6 @@ func main() {
 			},
 		},
 		Commands: []*cli.Command{
-			command.Login,
 			command.Add,
 			command.Post,
 			command.Exec,

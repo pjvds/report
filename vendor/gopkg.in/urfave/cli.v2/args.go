@@ -14,6 +14,8 @@ type Args interface {
 	// Tail returns the rest of the arguments (not the first one)
 	// or else an empty string slice
 	Tail() []string
+	// HasTail checks if there are any tail arguments present.
+	HasTail() bool
 	// Len returns the length of the wrapped slice
 	Len() int
 	// Present checks if there are any arguments present
@@ -43,6 +45,10 @@ func (a *args) Tail() []string {
 		return ret
 	}
 	return []string{}
+}
+
+func (a *args) HasTail() bool {
+	return a.Len() >= 2
 }
 
 func (a *args) Len() int {

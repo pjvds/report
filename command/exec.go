@@ -39,7 +39,7 @@ var Exec = &cli.Command{
 			log.Fatalf("missing channel name, please specify it like:\n\n\tslackme exec -c '#general' ./backup.sh'\n\nOr set the SLACKME_CHANNEL environment variable.")
 		}
 
-		if cli.Args().Present() {
+		if !cli.Args().Present() {
 			log.Fatalf("no command specified, please specify it like:\n\n\tslackme exec -c '#general' ./backup.sh'\n\nOr set the SLACKME_CHANNEL environment variable.")
 		}
 
@@ -48,21 +48,13 @@ var Exec = &cli.Command{
 			log.Fatalf("failed to load context: %v", err)
 		}
 
-		if context.NeedsLogin() {
-			log.Fatalf("not logged in, please run:\n\tslackme login")
-		}
-
-		channel, ok := context.ChannelByName(channelName)
-		if !ok {
-			log.Fatalf("channel not found, please run:\n\tslackme add '%v'", channelName)
+		channel, err := context.ChannelByName(channelName)
+		if err != nil {
+			return err
 		}
 
 		name := cli.Args().First()
-		args := []string{}
-		if cli.NArg() > 1 {
-			args = cli.Args().Tail()
-		}
-
+		args := cli.Args().Tail()
 		command := exec.Command(name, args...)
 		outputBuffer := new(bytes.Buffer)
 
@@ -120,7 +112,7 @@ var Exec = &cli.Command{
 					return prefix + string(runes[trim:])
 				}
 				return s
-			}}).Parse("```$ {{.Command}}{{if .Output}}\n{{keep .Output 500}}{{- end}}{{if .Err}}\n{{.Err}}{{- end}}```"))
+			}}).Parse("```$ {{.Command}}{{if .Output}}\n{{keep .Output 500}}{{- end}}{{if .Err}}\n{{.Err}}{{- end}}{{}}```"))
 
 		if err := messageTemplate.Execute(messageBuffer, result); err != nil {
 			log.Fatalf("failed to parse template: %v\n", err)

@@ -18,19 +18,15 @@ import (
 )
 
 type Context struct {
-	Email    string
-	Token    string
-	UserName string
-	TeamName string
-
-	Channels []Channel
+	Channels map[string]Channel
 
 	path string
 }
 
 type Channel struct {
-	Name       string
-	WebhookUrl string
+	TeamName    string
+	ChannelName string
+	WebhookUrl  string
 }
 
 func (this Channel) Post(message string) error {
@@ -53,13 +49,28 @@ func (this *Context) HasChannels() bool {
 	return len(this.Channels) > 0
 }
 
-func (this *Context) ChannelByName(name string) (Channel, bool) {
-	for _, channel := range this.Channels {
-		if strings.EqualFold(name, channel.Name) {
-			return channel, true
+func (this *Context) ChannelByName(name string) (Channel, error) {
+	found := make([]Channel, 0, 1)
+
+	for id, channel := range this.Channels {
+		if strings.EqualFold(name, id) {
+			found = append(found, channel)
+			continue
+		}
+
+		if strings.EqualFold(name, channel.ChannelName) {
+			found = append(found, channel)
 		}
 	}
-	return Channel{}, false
+
+	if len(found) == 0 {
+		return Channel{}, cli.Exit("channel not found, please run `slackme add` to add a channel or run `slackme list` to list all available channels", 155)
+	}
+	if len(found) > 1 {
+		return Channel{}, cli.Exit("channel found in multiple teams, please specify the full name (eq. "+found[0].TeamName+"/"+found[0].ChannelName+")", 155)
+	}
+
+	return found[0], nil
 }
 
 func (this *Context) AddChannel() (Channel, bool, error) {
@@ -87,11 +98,16 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 				return Channel{}, false, err
 			}
 
+			println(body.String())
+
 			channel := Channel{
-				Name:       body.Path("name").Data().(string),
-				WebhookUrl: body.Path("webhookURL").Data().(string),
+				TeamName:    body.Path("teamName").Data().(string),
+				ChannelName: body.Path("channelName").Data().(string),
+				WebhookUrl:  body.Path("webhookURL").Data().(string),
 			}
-			this.Channels = append(this.Channels, channel)
+
+			id := fmt.Sprintf("%v/%v", channel.TeamName, channel.ChannelName)
+			this.Channels[id] = channel
 
 			if err := this.Save(); err != nil {
 				return Channel{}, false, err
@@ -102,53 +118,11 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 	}
 }
 
-func (this *Context) Login() error {
-	signinID := xid.New().String()
-	authUrl := "https://slack.com/oauth/authorize?scope=identity.basic,identity.email,identity.team,identity.avatar&client_id=158986125361.158956389232&state=" + url.QueryEscape(signinID) + "&redirect_uri=" + url.QueryEscape("https://slackme.org/a/authenticate")
-	authCompleteURL := fmt.Sprintf("https://slackme.org/a/completion/authentication/%v", url.QueryEscape(signinID))
-
-	if err := exec.Command("open", authUrl).Run(); err != nil {
-		println("open the following url in a browser:\n\n\r" + authUrl)
-	}
-
-	s := spin.New()
-	for {
-		fmt.Printf("\rwaiting for completion %s", s.Next())
-		response, err := http.Get(authCompleteURL)
-		if err != nil {
-			return err
-		}
-
-		if response.StatusCode == http.StatusOK {
-			fmt.Printf("\r")
-			body, err := gabs.ParseJSONBuffer(response.Body)
-			if err != nil {
-				return err
-			}
-
-			this.Email = body.Path("email").Data().(string)
-			this.Token = body.Path("token").Data().(string)
-			this.UserName = body.Path("name").Data().(string)
-			this.TeamName = body.Path("team").Data().(string)
-			this.Channels = make([]Channel, 0)
-
-			if err := this.Save(); err != nil {
-				return err
-			}
-
-			return nil
-		}
-	}
-}
-
-func (this *Context) NeedsLogin() bool {
-	return len(this.Email) == 0 || len(this.Token) == 0
-}
-
 func LoadContext(ctx *cli.Context) (*Context, error) {
-	context := new(Context)
-
-	context.path = ctx.String("file")
+	context := &Context{
+		Channels: make(map[string]Channel),
+		path:     ctx.String("file"),
+	}
 	if len(context.path) == 0 {
 		context.path = os.ExpandEnv("$HOME/.slackme")
 	}
