@@ -1,7 +1,8 @@
 package command
 
 import (
-	"io/ioutil"
+	"bytes"
+	"io"
 	"log"
 	"os"
 
@@ -50,12 +51,15 @@ var Post = &cli.Command{
 		}
 
 		message := cli.Args().Get(1)
+
 		if message == "-" {
-			stdin, err := ioutil.ReadAll(os.Stdin)
+			buffer := new(bytes.Buffer)
+
+			_, err := io.Copy(io.MultiWriter(buffer, os.Stdout), os.Stdin)
 			if err != nil {
 				log.Fatalf("failed to read from stdin: %v", err)
 			}
-			message = string(stdin)
+			message = buffer.String()
 		}
 
 		if cli.Bool("code") {
