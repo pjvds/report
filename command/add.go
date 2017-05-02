@@ -8,7 +8,8 @@ import (
 )
 
 var Add = &cli.Command{
-	Name: "add",
+	Name:        "add",
+	Description: "Add slackme to a Slack channel of your choice.",
 	Action: func(c *cli.Context) error {
 		context, err := LoadContext(c)
 		if err != nil {

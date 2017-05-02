@@ -12,7 +12,8 @@ import (
 )
 
 var Post = &cli.Command{
-	Name: "post",
+	Name:        "post",
+	Description: "Post to a Slack channel.",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name: "code",

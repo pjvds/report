@@ -26,7 +26,8 @@ type ExecResult struct {
 }
 
 var Exec = &cli.Command{
-	Name: "exec",
+	Name:        "exec",
+	Description: "Execute a command and send the result to a Slack channel",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "c",
