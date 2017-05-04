@@ -37,11 +37,11 @@ var Exec = &cli.Command{
 	Action: func(cli *cli.Context) error {
 		channelName := cli.String("c")
 		if len(channelName) == 0 {
-			log.Fatalf("missing channel name, please specify it like:\n\n\tslackme exec -c '#general' ./backup.sh'\n\nOr set the SLACKME_CHANNEL environment variable.")
+			log.Fatalf("missing channel name, please set the -c flag or SLACKME_CHANNEL environment variable.\n")
 		}
 
 		if !cli.Args().Present() {
-			log.Fatalf("no command specified, please specify it like:\n\n\tslackme exec -c '#general' ./backup.sh'\n\nOr set the SLACKME_CHANNEL environment variable.")
+			log.Fatalf("no command specified, please specify it like:\n\n\tslackme exec -c '#general' ./backup.sh'")
 		}
 
 		context, err := LoadContext(cli)

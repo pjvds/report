@@ -98,8 +98,6 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 				return Channel{}, false, err
 			}
 
-			println(body.String())
-
 			channel := Channel{
 				TeamName:    body.Path("teamName").Data().(string),
 				ChannelName: body.Path("channelName").Data().(string),
@@ -132,7 +130,7 @@ func LoadContext(ctx *cli.Context) (*Context, error) {
 		if os.IsNotExist(err) {
 			return context, nil
 		}
-		return nil, err
+		return nil, cli.Exit(fmt.Sprintf("failed to open %v: %v", context.path, err.Error()), 255)
 	}
 
 	return context, json.NewDecoder(file).Decode(context)

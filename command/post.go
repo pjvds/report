@@ -27,31 +27,28 @@ var Post = &cli.Command{
 			}
 		}
 	},
-	Action: func(cli *cli.Context) error {
-		if cli.NArg() != 2 {
-			print("\"slackme post\" requires 2 arguments.\nSee 'docker post --help'.\n\n" +
-				"Usage: slackme post [OPTIONS] CHANNEL_NAME MESSAGE\n")
-			return nil
-		}
-
-		channelName := cli.Args().First()
+	Action: func(c *cli.Context) error {
+		channelName := c.Args().First()
 		if len(channelName) == 0 {
-			print("\"slackme post\" requires 2 arguments.\nSee 'docker post --help'.\n\n" +
-				"Usage: slackme post [OPTIONS] CHANNEL_NAME MESSAGE\n")
-			return nil
+			return cli.Exit("missing channel name, \"slackme post\" requires 2 arguments.\nSee 'slackme post --help'.\n\n"+
+				"Usage: slackme post [OPTIONS] CHANNEL_NAME MESSAGE", 1)
 		}
 
-		context, err := LoadContext(cli)
+		message := c.Args().Get(1)
+		if len(message) == 0 {
+			return cli.Exit("missing message, \"slackme post\" requires 2 arguments.\nSee 'slackme post --help'.\n\n"+
+				"Usage: slackme post [OPTIONS] CHANNEL_NAME MESSAGE", 1)
+		}
+
+		context, err := LoadContext(c)
 		if err != nil {
-			log.Fatalf("failed to load context: %v", err)
+			return err
 		}
 
 		channel, err := context.ChannelByName(channelName)
 		if err != nil {
 			return err
 		}
-
-		message := cli.Args().Get(1)
 
 		if message == "-" {
 			buffer := new(bytes.Buffer)
@@ -63,7 +60,7 @@ var Post = &cli.Command{
 			message = buffer.String()
 		}
 
-		if cli.Bool("code") {
+		if c.Bool("code") {
 			message = "```" + message + "```"
 		}
 
