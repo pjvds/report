@@ -3,4 +3,5 @@
 # make sure docker is available to use
 command -v docker >/dev/null 2>&1 || { echo >&2 "I require docker but it's not installed.  Aborting."; exit 1; }
 
-docker run -i --rm -v "$HOME/:/context/" -e SLACKME_FILE=/context/.slackme pjvds/slackme "$@"
+SLACKME_FILE=${SLACKME_FILE:-$HOME/.slackme}
+docker run -i --rm -v "$(dirname $SLACKME_FILE)/:/context/" -e SLACKME_FILE=/context/.slackme pjvds/slackme "$@"
