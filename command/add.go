@@ -21,7 +21,11 @@ var Add = &cli.Command{
 			return err
 		}
 		if ok {
-			fmt.Printf("channel added succesfully, run to post:\n\n\tslacke -c '%v' post", channel.ChannelName)
+			message := fmt.Sprintf(
+				"channel added succesfully, you can now post to %v:\n\n\t"+
+					"slackme post '%v' 'hello world!'",
+				channel.ChannelName, channel.ChannelName)
+			return cli.Exit(message, 0)
 		}
 		return nil
 	},
