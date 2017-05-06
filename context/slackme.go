@@ -76,8 +76,8 @@ func (this *Context) ChannelByName(name string) (Channel, error) {
 func (this *Context) AddChannel() (Channel, bool, error) {
 	addChannelID := xid.New().String()
 	addUrl := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v&redirect_uri=%v",
-		url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.org/a/register"))
-	completeURL := fmt.Sprintf("https://slackme.org/a/completion/channel/%v", url.QueryEscape(addChannelID))
+		url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.org/webhook"))
+	completeURL := fmt.Sprintf("https://slackme.org/webhook/%v", url.QueryEscape(addChannelID))
 
 	if err := exec.Command("open", addUrl).Run(); err != nil {
 		println("open the following url in a browser:\n\n\r" + addUrl)
@@ -91,7 +91,8 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 			return Channel{}, false, err
 		}
 
-		if response.StatusCode == http.StatusOK {
+		switch response.StatusCode {
+		case http.StatusOK:
 			fmt.Printf("\r")
 			body, err := gabs.ParseJSONBuffer(response.Body)
 			if err != nil {
@@ -112,6 +113,8 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 			}
 
 			return channel, true, nil
+		case http.StatusGone:
+			return Channel{}, false, cli.Exit("link expired, please try again", 256)
 		}
 	}
 }
