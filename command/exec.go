@@ -104,7 +104,6 @@ var Exec = &cli.Command{
 
 		messageBuffer := new(bytes.Buffer)
 		messageTemplate := template.Must(template.New("exec").Funcs(template.FuncMap{
-			// The name "title" is what the function will be called in the template text.
 			"keep": func(s string, i int) string {
 				runes := []rune(s)
 				if len(runes) > i {
@@ -113,7 +112,7 @@ var Exec = &cli.Command{
 					return prefix + string(runes[trim:])
 				}
 				return s
-			}}).Parse("```$ {{.Command}}{{if .Output}}\n{{keep .Output 500}}{{- end}}{{if .Err}}\n{{.Err}}{{- end}}{{}}```"))
+			}}).Parse("```$ {{.Command}}{{if .Output}}\n{{keep .Output 500}}{{- end}}{{if .Err}}\n{{.Err}}{{- end}}```"))
 
 		if err := messageTemplate.Execute(messageBuffer, result); err != nil {
 			log.Fatalf("failed to parse template: %v\n", err)
