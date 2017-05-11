@@ -7,9 +7,13 @@ import (
 	"gopkg.in/urfave/cli.v2"
 )
 
+var version = "unknown"
+
 func main() {
+
 	app := cli.App{
-		Name: "slackme",
+		Name:                  "slackme",
+		Version:               version,
 		EnableShellCompletion: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
