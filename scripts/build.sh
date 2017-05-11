@@ -9,7 +9,9 @@ if ! command -v gox >/dev/null; then
     exit 1
 fi
 
-VERSION=$(git describe --always || echo "unknown")
+if [ -z "$VERSION" ]; then
+  VERSION=$(git describe --always || echo "unknown")
+fi
 echo "building version: $VERSION"
 
 build_dir=`mktemp -d`
