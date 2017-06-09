@@ -123,7 +123,7 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 func LoadContext(ctx *cli.Context) (*Context, error) {
 	context := &Context{
 		Channels: make(map[string]Channel),
-		path:     ctx.String("file"),
+		path:     os.ExpandEnv(ctx.String("file")),
 	}
 
 	file, err := os.Open(context.path)
