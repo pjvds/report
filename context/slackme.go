@@ -24,6 +24,7 @@ type Context struct {
 }
 
 type Channel struct {
+	Default     bool
 	TeamName    string
 	ChannelName string
 	WebhookUrl  string
@@ -123,9 +124,6 @@ func LoadContext(ctx *cli.Context) (*Context, error) {
 	context := &Context{
 		Channels: make(map[string]Channel),
 		path:     ctx.String("file"),
-	}
-	if len(context.path) == 0 {
-		context.path = os.ExpandEnv("$HOME/.slackme")
 	}
 
 	file, err := os.Open(context.path)

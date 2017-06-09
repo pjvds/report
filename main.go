@@ -20,6 +20,7 @@ func main() {
 			&cli.StringFlag{
 				Name:    "file, f",
 				EnvVars: []string{"SLACKME_FILE"},
+				Value:   "$HOME/.slackme",
 			},
 			&cli.StringFlag{
 				Name:    "host",
