@@ -8,9 +8,9 @@ import (
 )
 
 var List = &cli.Command{
-	Name:        "list",
-	Aliases:     []string{"ls"},
-	Description: "List all your channels you can post to.",
+	Name:    "list",
+	Aliases: []string{"ls"},
+	Usage:   "List all available Slack channels",
 	Action: func(c *cli.Context) error {
 		context, err := LoadContext(c)
 		if err != nil {
