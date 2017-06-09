@@ -13,6 +13,7 @@ func main() {
 
 	app := cli.App{
 		Name:                  "slackme",
+		Description:           "post to slack from the commandline",
 		Version:               version,
 		EnableShellCompletion: true,
 		Flags: []cli.Flag{
