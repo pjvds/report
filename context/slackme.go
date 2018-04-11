@@ -10,8 +10,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/Jeffail/gabs"
+	"github.com/pjvds/backoff"
 	"github.com/rs/xid"
 	spin "github.com/tj/go-spin"
 	"gopkg.in/urfave/cli.v2"
@@ -85,8 +87,11 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 	}
 
 	s := spin.New()
+	delay := backoff.Exp(1*time.Millisecond, 5*time.Second)
+
 	for {
 		fmt.Printf("\rwaiting for completion %s", s.Next())
+
 		response, err := http.Get(completeURL)
 		if err != nil {
 			return Channel{}, false, err
@@ -117,6 +122,7 @@ func (this *Context) AddChannel() (Channel, bool, error) {
 		case http.StatusGone:
 			return Channel{}, false, cli.Exit("link expired, please try again", 256)
 		}
+		delay.Delay()
 	}
 }
 
