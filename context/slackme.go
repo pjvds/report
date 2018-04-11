@@ -77,8 +77,8 @@ func (this *Context) ChannelByName(name string) (Channel, error) {
 func (this *Context) AddChannel() (Channel, bool, error) {
 	addChannelID := xid.New().String()
 	addUrl := fmt.Sprintf("https://slack.com/oauth/authorize?scope=incoming-webhook&client_id=158986125361.158956389232&state=%v&redirect_uri=%v",
-		url.QueryEscape(addChannelID), url.QueryEscape("https://slackme.org/webhook"))
-	completeURL := fmt.Sprintf("https://slackme.org/webhook/%v", url.QueryEscape(addChannelID))
+		url.QueryEscape(addChannelID), url.QueryEscape("https://secure.slackme.org/add"))
+	completeURL := fmt.Sprintf("https://secure.slackme.org/completion/channel/%v", url.QueryEscape(addChannelID))
 
 	if err := exec.Command("open", addUrl).Run(); err != nil {
 		println("open the following url in a browser:\n\n\r" + addUrl)
