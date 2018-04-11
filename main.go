@@ -25,7 +25,7 @@ func main() {
 			&cli.StringFlag{
 				Name:    "host",
 				EnvVars: []string{"SLACKME_HOST"},
-				Value:   "https://slackme.org",
+				Value:   "https://secure.slackme.org",
 			},
 		},
 		Commands: []*cli.Command{
