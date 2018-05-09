@@ -33,12 +33,19 @@ var Exec = &cli.Command{
 			Name:    "c",
 			EnvVars: []string{"SLACKME_CHANNEL"},
 		},
+		&cli.BoolFlag{
+			Name:  "fo",
+			Usage: "report failure (non zero exit codes) only",
+			Value: false,
+		},
 	},
 	Action: func(cli *cli.Context) error {
 		channelName := cli.String("c")
 		if len(channelName) == 0 {
 			log.Fatalf("missing channel name, please set the -c flag or SLACKME_CHANNEL environment variable.\n")
 		}
+
+		failureOnly := cli.Bool("fo")
 
 		if !cli.Args().Present() {
 			log.Fatalf("no command specified, please specify it like:\n\n\tslackme exec -c '#general' ./backup.sh'")
@@ -100,6 +107,11 @@ var Exec = &cli.Command{
 			result.Output = strings.Trim(outputBuffer.String(), "\t\r\n")
 
 			signal.Stop(signals)
+		}
+
+		// exit if there was no error and the failureOnly flag is set
+		if result.Err == nil && failureOnly {
+			return nil
 		}
 
 		messageBuffer := new(bytes.Buffer)
